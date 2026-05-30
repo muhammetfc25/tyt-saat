@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TYT Sınav Saati</title>
+
+<link href="https://fonts.cdnfonts.com/css/ds-digital" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    background:#000;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:Arial;
+}
+
+.container{
+    width:95%;
+    max-width:600px;
+    text-align:center;
+}
+
+.clock{
+    border:3px solid #ff0000;
+    border-radius:20px;
+    padding:40px 10px;
+    box-shadow:0 0 25px #ff0000, inset 0 0 25px rgba(255,0,0,.2);
+}
+
+#time{
+    font-family:'DS-Digital';
+    font-size:clamp(6rem,25vw,10rem);
+    color:#ff1a1a;
+    text-shadow:0 0 20px #ff0000;
+}
+
+.controls{
+    margin-top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.row{
+    display:flex;
+    gap:10px;
+}
+
+input{
+    flex:1;
+    padding:12px;
+    font-size:18px;
+    border-radius:10px;
+    border:none;
+    text-align:center;
+}
+
+button{
+    flex:1;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.start{background:#16a34a;color:white;}
+.stop{background:#f59e0b;}
+.reset{background:#dc2626;color:white;}
+
+#status{
+    margin-top:15px;
+    color:#aaa;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="clock">
+        <div id="time">00:00</div>
+    </div>
+
+    <div class="controls">
+
+        <div class="row">
+            <input id="hourInput" type="number" placeholder="Saat (10)" min="0" max="23">
+            <input id="minInput" type="number" placeholder="Dakika (15)" min="0" max="59">
+        </div>
+
+        <div class="row">
+            <button class="start" id="startBtn">BAŞLAT</button>
+            <button class="stop" id="stopBtn">DURDUR</button>
+            <button class="reset" id="resetBtn">SIFIRLA</button>
+        </div>
+
+        <div id="status">Hazır</div>
+
+    </div>
+
+</div>
+
+<script>
+
+let hour = 10;
+let minute = 15;
+let timer = null;
+let wakeLock = null;
+
+/* WAKE LOCK */
+async function requestWakeLock(){
+    try{
+        wakeLock = await navigator.wakeLock.request("screen");
+    }catch(e){}
+}
+
+async function releaseWakeLock(){
+    if(wakeLock){
+        await wakeLock.release();
+        wakeLock = null;
+    }
+}
+
+/* CLOCK */
+function update(){
+    document.getElementById("time").textContent =
+        String(hour).padStart(2,'0') + ":" +
+        String(minute).padStart(2,'0');
+}
+
+/* START */
+async function start(){
+
+    hour = parseInt(hourInput.value || hour);
+    minute = parseInt(minInput.value || minute);
+
+    localStorage.setItem("hour", hour);
+    localStorage.setItem("minute", minute);
+
+    if(navigator.vibrate) navigator.vibrate(200);
+
+    await requestWakeLock();
+
+    document.getElementById("status").textContent = "🟢 SINAV BAŞLADI";
+
+    if(timer) return;
+
+    timer = setInterval(() => {
+
+        minute++;
+
+        if(minute >= 60){
+            minute = 0;
+            hour++;
+        }
+
+        update();
+
+    },60000);
+}
+
+/* STOP */
+async function stop(){
+    clearInterval(timer);
+    timer = null;
+
+    document.getElementById("status").textContent = "🟡 DURAKLATILDI";
+
+    await releaseWakeLock();
+}
+
+/* RESET */
+async function reset(){
+    clearInterval(timer);
+    timer = null;
+
+    hour = 0;
+    minute = 0;
+
+    update();
+
+    document.getElementById("status").textContent = "Hazır";
+
+    await releaseWakeLock();
+}
+
+/* RESTORE LAST STATE */
+window.onload = () => {
+    hour = parseInt(localStorage.getItem("hour") || 10);
+    minute = parseInt(localStorage.getItem("minute") || 15);
+    update();
+};
+
+/* EVENTS */
+document.getElementById("startBtn").addEventListener("click", start);
+document.getElementById("stopBtn").addEventListener("click", stop);
+document.getElementById("resetBtn").addEventListener("click", reset);
+
+/* PREVENT EXIT WARNING */
+window.addEventListener("beforeunload", (e) => {
+    e.preventDefault();
+    e.returnValue = "";
+});
+
+/* PWA */
+if('serviceWorker' in navigator){
+    navigator.serviceWorker.register("sw.js");
+}
+
+</script>
+
+</body>
+</html>
