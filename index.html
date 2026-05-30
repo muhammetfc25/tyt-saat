@@ -4,77 +4,151 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TYT Sınav Saati</title>
+<title>TYT ULTRA PRO</title>
 
 <link href="https://fonts.cdnfonts.com/css/ds-digital" rel="stylesheet">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
 
 <style>
 
-*{margin:0;padding:0;box-sizing:border-box;}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
 body{
     background:#000;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    color:white;
     font-family:Arial;
+    min-height:100vh;
 }
 
-.container{
-    width:95%;
-    max-width:600px;
-    text-align:center;
-}
-
-.clock{
-    border:3px solid #ff0000;
-    border-radius:20px;
-    padding:40px 10px;
-    box-shadow:0 0 25px #ff0000, inset 0 0 25px rgba(255,0,0,.2);
-}
-
-#time{
-    font-family:'DS-Digital';
-    font-size:clamp(6rem,25vw,10rem);
-    color:#ff1a1a;
-    text-shadow:0 0 20px #ff0000;
-}
-
-.controls{
-    margin-top:20px;
+/* FULLSCREEN SCREEN */
+.screen{
+    position:fixed;
+    inset:0;
+    background:#000;
     display:flex;
     flex-direction:column;
-    gap:10px;
+    justify-content:center;
+    align-items:center;
 }
 
-.row{
+/* CLOCK */
+#time{
+    font-family:'DS-Digital';
+    font-size:clamp(4.5rem,16vw,9rem);
+    color:#ff1a1a;
+    text-shadow:0 0 30px red;
+}
+
+/* PROGRESS */
+.progress-container{
+    width:80%;
+    max-width:500px;
+    margin-top:25px;
+}
+
+.progress-bar{
+    width:100%;
+    height:14px;
+    background:#111;
+    border-radius:20px;
+    overflow:hidden;
+    border:1px solid rgba(255,0,0,0.3);
+}
+
+.progress{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#ff0000,#ff4d4d);
+    transition:0.3s;
+}
+
+.progress-text{
+    margin-top:8px;
+    color:#aaa;
+    font-size:13px;
+    text-align:center;
+}
+
+/* CARD */
+.card{
+    margin-top:25px;
+    background:rgba(255,0,0,0.06);
+    border:1px solid rgba(255,0,0,0.25);
+    border-radius:18px;
+    padding:20px;
+    width:90%;
+    max-width:500px;
+    text-align:center;
+}
+
+.title{
+    color:#ff3b3b;
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+/* INPUTS */
+.inputs{
     display:flex;
     gap:10px;
 }
 
-input{
+.input-box{
     flex:1;
-    padding:12px;
-    font-size:18px;
-    border-radius:10px;
-    border:none;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+label{
+    font-size:12px;
+    color:#aaa;
+    text-align:left;
+}
+
+/* INPUT */
+input[type=number]{
+    padding:14px;
+    border-radius:12px;
+    border:1px solid rgba(255,0,0,0.3);
+    background:#0a0a0a;
+    color:#ff1a1a;
+    font-size:20px;
     text-align:center;
+    outline:none;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+}
+
+input[type=number]{
+    -moz-appearance:textfield;
+}
+
+/* BUTTONS */
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
 }
 
 button{
     flex:1;
     padding:14px;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     font-weight:bold;
     cursor:pointer;
 }
 
 .start{background:#16a34a;color:white;}
-.stop{background:#f59e0b;}
+.stop{background:#f59e0b;color:black;}
 .reset{background:#dc2626;color:white;}
 
 #status{
@@ -87,22 +161,38 @@ button{
 
 <body>
 
-<div class="container">
+<div class="screen">
 
-    <div class="clock">
-        <div id="time">00:00</div>
+    <div id="time">00:00</div>
+
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="progress-text" id="progressText">0%</div>
     </div>
 
-    <div class="controls">
+    <div class="card">
 
-        <div class="row">
-            <input id="hourInput" type="number" placeholder="Saat (10)" min="0" max="23">
-            <input id="minInput" type="number" placeholder="Dakika (15)" min="0" max="59">
+        <div class="title">⏱ TYT ULTRA PRO</div>
+
+        <div class="inputs">
+
+            <div class="input-box">
+                <label>Saat</label>
+                <input id="hourInput" type="number" value="10" min="0" max="23">
+            </div>
+
+            <div class="input-box">
+                <label>Dakika</label>
+                <input id="minInput" type="number" value="15" min="0" max="59">
+            </div>
+
         </div>
 
-        <div class="row">
+        <div class="buttons">
             <button class="start" id="startBtn">BAŞLAT</button>
-            <button class="stop" id="stopBtn">DURDUR</button>
+            <button class="stop" id="stopBtn">DURAKLAT</button>
             <button class="reset" id="resetBtn">SIFIRLA</button>
         </div>
 
@@ -114,50 +204,58 @@ button{
 
 <script>
 
-let hour = 10;
-let minute = 15;
+/* SABİT SINAV ARALIĞI */
+const EXAM_START = 10 * 60 + 15; // 10:15
+const EXAM_END   = 13 * 60;      // 13:00
+const TOTAL = EXAM_END - EXAM_START;
+
+let hour = 0;
+let minute = 0;
 let timer = null;
-let wakeLock = null;
+let running = false;
 
-/* WAKE LOCK */
-async function requestWakeLock(){
-    try{
-        wakeLock = await navigator.wakeLock.request("screen");
-    }catch(e){}
-}
-
-async function releaseWakeLock(){
-    if(wakeLock){
-        await wakeLock.release();
-        wakeLock = null;
-    }
-}
-
-/* CLOCK */
+/* UPDATE CLOCK */
 function update(){
+
     document.getElementById("time").textContent =
         String(hour).padStart(2,'0') + ":" +
         String(minute).padStart(2,'0');
+
+    updateProgress();
+}
+
+/* PROGRESS FIXED */
+function updateProgress(){
+
+    let current = hour * 60 + minute;
+
+    let elapsed = current - EXAM_START;
+
+    if(elapsed < 0) elapsed = 0;
+    if(elapsed > TOTAL) elapsed = TOTAL;
+
+    let percent = (elapsed / TOTAL) * 100;
+
+    document.getElementById("progress").style.width = percent + "%";
+    document.getElementById("progressText").textContent =
+        Math.floor(percent) + "%";
 }
 
 /* START */
-async function start(){
+function start(){
 
-    hour = parseInt(hourInput.value || hour);
-    minute = parseInt(minInput.value || minute);
+    hour = parseInt(hourInput.value || 0);
+    minute = parseInt(minInput.value || 0);
 
-    localStorage.setItem("hour", hour);
-    localStorage.setItem("minute", minute);
+    running = true;
 
-    if(navigator.vibrate) navigator.vibrate(200);
+    document.getElementById("status").textContent = "🟢 Çalışıyor";
 
-    await requestWakeLock();
-
-    document.getElementById("status").textContent = "🟢 SINAV BAŞLADI";
-
-    if(timer) return;
+    if(timer) clearInterval(timer);
 
     timer = setInterval(() => {
+
+        if(!running) return;
 
         minute++;
 
@@ -168,56 +266,38 @@ async function start(){
 
         update();
 
-    },60000);
+    }, 60000);
+
+    update();
 }
 
 /* STOP */
-async function stop(){
+function stop(){
+    running = false;
     clearInterval(timer);
     timer = null;
 
-    document.getElementById("status").textContent = "🟡 DURAKLATILDI";
-
-    await releaseWakeLock();
+    document.getElementById("status").textContent = "🟡 Duraklatıldı";
 }
 
 /* RESET */
-async function reset(){
+function reset(){
     clearInterval(timer);
     timer = null;
 
     hour = 0;
     minute = 0;
+    running = false;
 
-    update();
+    document.getElementById("progress").style.width = "0%";
+    document.getElementById("progressText").textContent = "0%";
 
     document.getElementById("status").textContent = "Hazır";
-
-    await releaseWakeLock();
 }
 
-/* RESTORE LAST STATE */
-window.onload = () => {
-    hour = parseInt(localStorage.getItem("hour") || 10);
-    minute = parseInt(localStorage.getItem("minute") || 15);
-    update();
-};
-
-/* EVENTS */
 document.getElementById("startBtn").addEventListener("click", start);
 document.getElementById("stopBtn").addEventListener("click", stop);
 document.getElementById("resetBtn").addEventListener("click", reset);
-
-/* PREVENT EXIT WARNING */
-window.addEventListener("beforeunload", (e) => {
-    e.preventDefault();
-    e.returnValue = "";
-});
-
-/* PWA */
-if('serviceWorker' in navigator){
-    navigator.serviceWorker.register("sw.js");
-}
 
 </script>
 
