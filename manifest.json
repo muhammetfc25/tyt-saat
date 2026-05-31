@@ -1,14 +1,31 @@
 {
-  "name": "TYT Sınav Saati",
+  "name": "TYT / AYT Ultra Pro",
   "short_name": "TYT Saat",
+  "description": "TYT ve AYT için dijital sınav saati, tam ekran mod ve PWA desteği.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable_icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
       "src": "icons/logo.ico",
-      "type": "image/ico"
+      "sizes": "256x256 128x128 64x64",
+      "type": "image/x-icon",
+      "purpose": "any"
     }
   ]
 }

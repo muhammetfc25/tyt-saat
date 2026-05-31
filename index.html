@@ -1,305 +1,328 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="TYT / AYT sınav saati uygulaması, tam ekran saat modu ve progresif web uygulama desteği.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/logo.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TYT / AYT Ultra Pro">
+  <title>TYT / AYT Ultra Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg1:#07060a;--bg2:#0b1226;--card:#0f1724;--glass:rgba(255,255,255,0.04);--accent-tyt:#ff3b3b;--accent-ayt:#3b82f6;--muted:#98a0aa}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{font-family:Inter,system-ui,Segoe UI,Arial;color:#e6eef8;background:linear-gradient(180deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased}
+    .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+    .container{width:min(980px,96vw);display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:center}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));border-radius:22px;padding:28px;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(16px);box-shadow:0 30px 90px rgba(0,0,0,0.28)}
+    .left{display:flex;flex-direction:column;align-items:center;gap:22px}
+    #time{font-weight:900;font-size:clamp(48px,18vw,144px);line-height:1;color:var(--accent-tyt);text-shadow:0 16px 52px rgba(255,59,59,0.16);font-variant-numeric:tabular-nums}
+    .badge{position:fixed;top:18px;right:18px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#dbeafe;font-weight:700;letter-spacing:.02em}
+    .progress{width:100%;max-width:760px}
+    .bar{height:14px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+    .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent-tyt),#ffd6d6);transition:width .6s ease}
+    .progress-meta{display:flex;justify-content:space-between;color:var(--muted);margin-top:8px;font-weight:600}
 
-<title>TYT ULTRA PRO</title>
+    .panel{padding:18px;display:flex;flex-direction:column;gap:12px}
+    label{font-size:13px;color:var(--muted);font-weight:600}
 
-<link href="https://fonts.cdnfonts.com/css/ds-digital" rel="stylesheet">
+    /* Inputs: elevated glass style with subtle shadow and transitions */
+    input{
+      width:100%;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+      color:inherit;
+      transition:box-shadow .16s ease,transform .08s ease,border-color .12s ease;
+      -webkit-appearance:none;-moz-appearance:none;appearance:none;
+      font-weight:700;
+    }
 
-<style>
+    .mode-panel{display:flex;flex-direction:column;gap:18px;padding:22px;border-radius:24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04)}
+    .mode-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .mode-header span{font-size:0.83rem;text-transform:uppercase;letter-spacing:.24em;color:var(--muted);font-weight:700}
+    .mode-pill{padding:14px 18px;border-radius:18px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:#fff;font-weight:800;letter-spacing:.02em;box-shadow:0 18px 50px rgba(0,0,0,0.18)}
+    .mode-list{display:grid;gap:14px}
+    .mode-option{display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.025);color:#dbeafe;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .16s ease;border-color:rgba(255,255,255,0.08)}
+    .mode-option:hover{transform:translateY(-1px);background:rgba(255,255,255,0.05)}
+    .mode-option.selected{background:rgba(59,130,246,0.14);border-color:rgba(59,130,246,0.45);color:#fff;box-shadow:0 14px 34px rgba(59,130,246,0.16)}
+    .mode-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,0.08)}
+    .mode-option.selected .mode-dot{background:linear-gradient(180deg,#38bdf8,#4338ca);box-shadow:none}
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+    .mode-label{font-size:0.98rem;font-weight:700;letter-spacing:0.01em}
+    .mode-meta{font-size:0.86rem;color:var(--muted);line-height:1.4}
 
-body{
-    background:#000;
-    color:white;
-    font-family:Arial;
-    min-height:100vh;
-}
+    .mode-control{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-/* FULLSCREEN SCREEN */
-.screen{
-    position:fixed;
-    inset:0;
-    background:#000;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-}
+    .mode-panel small{color:var(--muted);}
+    .mode-panel strong{display:block;font-size:1.02rem;color:#f8fafc;}
 
-/* CLOCK */
-#time{
-    font-family:'DS-Digital';
-    font-size:clamp(4.5rem,16vw,9rem);
-    color:#ff1a1a;
-    text-shadow:0 0 30px red;
-}
+    .mode-panel + .controls{margin-top:4px}
 
-/* PROGRESS */
-.progress-container{
-    width:80%;
-    max-width:500px;
-    margin-top:25px;
-}
+    .mode-option:focus{outline:none;box-shadow:0 0 0 4px rgba(59,130,246,0.15)}
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    input[type=number]{appearance:none;-moz-appearance:textfield}
 
-.progress-bar{
-    width:100%;
-    height:14px;
-    background:#111;
-    border-radius:20px;
-    overflow:hidden;
-    border:1px solid rgba(255,0,0,0.3);
-}
+    select{display:none}
+    .mode-option svg{display:none}
 
-.progress{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg,#ff0000,#ff4d4d);
-    transition:0.3s;
-}
+    select:focus,input:focus{outline:none;border-color:rgba(99,102,241,0.9);box-shadow:0 6px 18px rgba(99,102,241,0.08);transform:translateY(-1px)}
 
-.progress-text{
-    margin-top:8px;
-    color:#aaa;
-    font-size:13px;
-    text-align:center;
-}
+    .controls{display:flex;gap:12px;flex-wrap:wrap}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;background:rgba(255,255,255,0.06);color:inherit;padding:12px;border-radius:18px;cursor:pointer;transition:transform .14s ease,box-shadow .16s ease;box-shadow:0 14px 30px rgba(0,0,0,0.2)}
+    .icon-btn:hover{transform:translateY(-1px);box-shadow:0 18px 36px rgba(0,0,0,0.24)}
+    .btn{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:16px 24px;border-radius:18px;border:1px solid rgba(148,163,184,0.18);background:rgba(15,23,42,0.92);color:#e2e8f0;font-weight:700;letter-spacing:.02em;text-transform:none;cursor:pointer;transition:transform .12s ease,box-shadow .16s ease,background .16s ease,border-color .16s ease,color .16s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 20px 40px rgba(15,23,42,0.3);background:rgba(59,130,246,0.14);border-color:rgba(59,130,246,0.35);color:#f8fbff}
+    .btn:focus{outline:none;box-shadow:0 0 0 4px rgba(59,130,246,0.18)}
+    .btn:active{transform:translateY(1px);box-shadow:0 12px 28px rgba(15,23,42,0.24)}
 
-/* CARD */
-.card{
-    margin-top:25px;
-    background:rgba(255,0,0,0.06);
-    border:1px solid rgba(255,0,0,0.25);
-    border-radius:18px;
-    padding:20px;
-    width:90%;
-    max-width:500px;
-    text-align:center;
-}
+    .btn.start,.btn.pause,.btn.reset{background:rgba(15,23,42,0.92);color:#e2e8f0;border-color:rgba(148,163,184,0.18);box-shadow:0 18px 40px rgba(15,23,42,0.26)}
+    .btn.start:hover{background:rgba(34,197,94,0.16);color:#ecfdf5;border-color:rgba(34,197,94,0.35)}
+    .btn.pause:hover{background:rgba(96,165,250,0.16);color:#eff6ff;border-color:rgba(96,165,250,0.35)}
+    .btn.reset:hover{background:rgba(248,113,113,0.16);color:#fdf2f8;border-color:rgba(248,113,113,0.35)}
 
-.title{
-    color:#ff3b3b;
-    margin-bottom:15px;
-    font-weight:bold;
-}
+    #status{font-weight:700;color:var(--muted);text-align:center;margin-top:6px}
 
-/* INPUTS */
-.inputs{
-    display:flex;
-    gap:10px;
-}
+    .right{display:flex;flex-direction:column;gap:12px}
+    .card.small{padding:16px}
+    h3{color:#dbeafe;margin-bottom:6px}
 
-.input-box{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-}
+    #finish{display:none;position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,23,0.9),rgba(2,6,23,0.95));align-items:center;justify-content:center;flex-direction:column;z-index:999}
+    #finish h1{font-size:4rem;color:var(--accent-tyt);margin-bottom:8px}
 
-label{
-    font-size:12px;
-    color:#aaa;
-    text-align:left;
-}
-
-/* INPUT */
-input[type=number]{
-    padding:14px;
-    border-radius:12px;
-    border:1px solid rgba(255,0,0,0.3);
-    background:#0a0a0a;
-    color:#ff1a1a;
-    font-size:20px;
-    text-align:center;
-    outline:none;
-}
-
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button{
-    -webkit-appearance:none;
-    margin:0;
-}
-
-input[type=number]{
-    -moz-appearance:textfield;
-}
-
-/* BUTTONS */
-.buttons{
-    display:flex;
-    gap:10px;
-    margin-top:15px;
-}
-
-button{
-    flex:1;
-    padding:14px;
-    border:none;
-    border-radius:12px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.start{background:#16a34a;color:white;}
-.stop{background:#f59e0b;color:black;}
-.reset{background:#dc2626;color:white;}
-
-#status{
-    margin-top:15px;
-    color:#aaa;
-}
-
-</style>
+    @media (max-width:900px){.container{grid-template-columns:1fr;}.right{order:2}.left{order:1}}
+  </style>
 </head>
-
-<body>
-
-<div class="screen">
-
-    <div id="time">00:00</div>
-
-    <div class="progress-container">
-        <div class="progress-bar">
-            <div class="progress" id="progress"></div>
+<body class="tyt">
+  <div class="badge" id="badge">TYT MODU</div>
+  <main class="app">
+    <div class="container">
+      <section class="card left">
+        <div class="time-wrap" style="position:relative;display:flex;align-items:center;gap:14px">
+          <div id="time">10:15</div>
+          <button id="fullscreenBtn" class="icon-btn" title="Tam Ekran" aria-label="Tam Ekran">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 9V3h6" stroke="#dbeafe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15v6h-6" stroke="#dbeafe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3h-6v6" stroke="#dbeafe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21v-6h6" stroke="#dbeafe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
-        <div class="progress-text" id="progressText">0%</div>
-    </div>
+        <div class="progress">
+          <div class="bar"><div class="fill" id="fill"></div></div>
+          <div class="progress-meta"><div id="progressText">%0</div><div id="remaining">Kalan Süre: --</div></div>
+          <div style="display:flex;justify-content:space-between;color:var(--muted);margin-top:8px;font-size:13px"> <div>Başlangıç: <span id="startDisplay">--:--</span></div><div>Bitiş: <span id="endDisplay">--:--</span></div></div>
+        </div>
+      </section>
 
-    <div class="card">
-
-        <div class="title">⏱ TYT ULTRA PRO</div>
-
-        <div class="inputs">
-
-            <div class="input-box">
-                <label>Saat</label>
-                <input id="hourInput" type="number" value="10" min="0" max="23">
+      <aside class="card right">
+        <div class="panel card small">
+          <h3>ULTRA PRO SINAV SAATİ</h3>
+          <div class="mode-panel">
+            <div class="mode-header">
+              <span>Mod</span>
+              <small>Başlangıç 10:15</small>
             </div>
-
-            <div class="input-box">
-                <label>Dakika</label>
-                <input id="minInput" type="number" value="15" min="0" max="59">
+            <div class="mode-pill" id="modeLabel">TYT (10:15 - 13:00)</div>
+            <div class="mode-list" role="radiogroup" aria-label="Sınav modu">
+              <button type="button" class="mode-option selected" data-value="TYT" aria-checked="true">
+                <span class="mode-dot"></span>
+                <span>
+                  <span class="mode-label">TYT</span>
+                  <span class="mode-meta">10:15 - 13:00</span>
+                </span>
+              </button>
+              <button type="button" class="mode-option" data-value="AYT" aria-checked="false">
+                <span class="mode-dot"></span>
+                <span>
+                  <span class="mode-label">AYT</span>
+                  <span class="mode-meta">10:15 - 13:15</span>
+                </span>
+              </button>
             </div>
+            <select id="mode" aria-label="Sınav modu">
+              <option value="TYT">TYT</option>
+              <option value="AYT">AYT</option>
+            </select>
+          </div>
 
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1">
+              <label for="hour">Saat</label>
+              <input id="hour" type="number" value="10" min="0" max="23" aria-label="Saat">
+            </div>
+            <div style="width:120px">
+              <label for="minute">Dakika</label>
+              <input id="minute" type="number" value="15" min="0" max="59" aria-label="Dakika">
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="startBtn" class="btn start">BAŞLAT</button>
+            <button id="pauseBtn" class="btn pause">DURAKLAT</button>
+            <button id="resetBtn" class="btn reset">SIFIRLA</button>
+          </div>
+          <div id="status">Hazır</div>
         </div>
-
-        <div class="buttons">
-            <button class="start" id="startBtn">BAŞLAT</button>
-            <button class="stop" id="stopBtn">DURAKLAT</button>
-            <button class="reset" id="resetBtn">SIFIRLA</button>
-        </div>
-
-        <div id="status">Hazır</div>
-
+      </aside>
     </div>
+  </main>
 
-</div>
+  <div id="finish">
+    <h1>SINAV BİTTİ</h1>
+    <p style="color:#cbd5e1">Süre tamamlandı.</p>
+  </div>
 
-<script>
+  <!-- Digital-only fullscreen overlay -->
+  <div id="digitalOnly" style="display:none;position:fixed;inset:0;background:var(--bg2);z-index:2500;align-items:center;justify-content:center;cursor:pointer;flex-direction:column">
+    <div id="bigTime" style="font-weight:900;font-size:clamp(80px,30vw,220px);color:var(--accent-tyt);text-shadow:0 12px 48px rgba(0,0,0,0.6)">10:15</div>
+    <div id="bigMode" style="color:var(--muted);margin-top:10px;font-weight:700">TYT MODU</div>
+  </div>
 
-/* SABİT SINAV ARALIĞI */
-const EXAM_START = 10 * 60 + 15; // 10:15
-const EXAM_END   = 13 * 60;      // 13:00
-const TOTAL = EXAM_END - EXAM_START;
+  <script>
+    let timer=null,wakeLock=null;
+    let hour=10,minute=15,running=false;
+    const $ = id => document.getElementById(id);
 
-let hour = 0;
-let minute = 0;
-let timer = null;
-let running = false;
+    function applyTheme(){
+      const ayt = $("mode").value === "AYT";
+      document.body.className = ayt? 'ayt' : 'tyt';
+      document.documentElement.style.setProperty('--accent-tyt', ayt? getComputedStyle(document.documentElement).getPropertyValue('--accent-ayt') : '#ff3b3b');
+      $('badge').textContent = ayt? 'AYT MODU' : 'TYT MODU';
+      // adjust fill gradient based on mode
+      document.querySelectorAll('.fill').forEach(f=> f.style.background = ayt? 'linear-gradient(90deg,var(--accent-ayt),#cfe4ff)' : 'linear-gradient(90deg,var(--accent-tyt),#ffd6d6)');
+      // update big overlay color
+      const big = $('bigTime'); if(big) big.style.color = ayt? getComputedStyle(document.documentElement).getPropertyValue('--accent-ayt') : getComputedStyle(document.documentElement).getPropertyValue('--accent-tyt');
+      syncModeLabel();
+    }
 
-/* UPDATE CLOCK */
-function update(){
+    const START_MINUTES = 615; // exams always start at 10:15
+    function save(){ localStorage.setItem('examClockV2', JSON.stringify({hour,minute,running,mode: $('mode').value})); }
 
-    document.getElementById("time").textContent =
-        String(hour).padStart(2,'0') + ":" +
-        String(minute).padStart(2,'0');
+    function syncModeLabel(){
+      const mode = $('mode').value;
+      const label = $('modeLabel');
+      if(label) label.textContent = mode === 'AYT' ? 'AYT (10:15 - 13:15)' : 'TYT (10:15 - 13:00)';
+      document.querySelectorAll('.mode-option').forEach(button => {
+        const selected = button.dataset.value === mode;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-checked', String(selected));
+      });
+    }
 
-    updateProgress();
-}
+    function selectMode(value){
+      const select = $('mode');
+      if(select){
+        select.value = value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
 
-/* PROGRESS FIXED */
-function updateProgress(){
+    function load(){ const d = JSON.parse(localStorage.getItem('examClockV2') || 'null'); if(!d) return; hour=d.hour; minute=d.minute; running=d.running; $('mode').value=d.mode||'TYT'; applyTheme(); syncModeLabel(); updateDisplay(); if(running) resume(); }
 
-    let current = hour * 60 + minute;
+    async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); }}catch(e){} }
+    async function releaseWakeLock(){ if(wakeLock){ await wakeLock.release(); wakeLock=null; }}
 
-    let elapsed = current - EXAM_START;
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible' && running) requestWakeLock(); });
 
-    if(elapsed < 0) elapsed = 0;
-    if(elapsed > TOTAL) elapsed = TOTAL;
+    function getEndMinutes(){ return $('mode').value === 'AYT' ? 795 : 780; }
 
-    let percent = (elapsed / TOTAL) * 100;
+    function updateProgress(){
+      const current = hour*60 + minute;
+      const start = START_MINUTES;
+      const end = getEndMinutes();
+      const total = Math.max(0, end - start);
+      let elapsed = Math.max(0, Math.min(total, current - start));
+      const pct = total>0? (elapsed/total)*100 : 0;
+      $('fill').style.width = pct + '%';
+      $('progressText').textContent = '%' + Math.floor(pct);
+      const remain = Math.max(0, end - current);
+      const rh = Math.floor(remain/60);
+      const rm = remain % 60;
+      $('remaining').textContent = `Kalan Süre: ${rh} saat ${rm} dk`;
+      // update visible start/end displays
+      const sh = Math.floor(start/60); const sm = start%60; const eh = Math.floor(end/60); const em = end%60;
+      $('startDisplay').textContent = String(sh).padStart(2,'0')+':'+String(sm).padStart(2,'0');
+      $('endDisplay').textContent = String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0');
+      // update big overlay time/mode if visible
+      const big = $('bigTime'); const bigMode = $('bigMode'); if(big && bigMode && $('digitalOnly').style.display === 'flex'){
+        big.textContent = String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
+        bigMode.textContent = $('badge').textContent;
+      }
+      if(current>=end) finishExam();
+    }
 
-    document.getElementById("progress").style.width = percent + "%";
-    document.getElementById("progressText").textContent =
-        Math.floor(percent) + "%";
-}
+    function updateDisplay(){ $('time').textContent = String(hour).padStart(2,'0') + ':' + String(minute).padStart(2,'0'); updateProgress(); }
 
-/* START */
-function start(){
+    function tick(){ minute++; if(minute>=60){ minute=0; hour++; } updateDisplay(); save(); }
 
-    hour = parseInt(hourInput.value || 0);
-    minute = parseInt(minInput.value || 0);
+    async function startClock(){
+      if(!running){
+        hour = parseInt($('hour').value) || 10;
+        minute = parseInt($('minute').value) || 15;
+      }
+      running = true;
+      applyTheme();
+      await requestWakeLock();
+      if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+      clearInterval(timer);
+      timer = setInterval(tick, 60000);
+      $('status').textContent = '🟢 SINAV BAŞLADI';
+      $('finish').style.display = 'none';
+      updateDisplay();
+      save();
+    }
 
-    running = true;
+    // Fullscreen digital-only mode: show only the big digital clock
+    function enterDigitalOnly(){
+      const overlay = $('digitalOnly');
+      overlay.style.display = 'flex';
+      overlay.querySelector('#bigTime').textContent = String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
+      overlay.querySelector('#bigMode').textContent = $('badge').textContent;
+      // request fullscreen for the overlay if possible
+      if(overlay.requestFullscreen) overlay.requestFullscreen().catch(()=>{});
+    }
 
-    document.getElementById("status").textContent = "🟢 Çalışıyor";
+    function exitDigitalOnly(){
+      const overlay = $('digitalOnly');
+      overlay.style.display = 'none';
+      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    }
 
-    if(timer) clearInterval(timer);
+    // wire clicks/keys
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') exitDigitalOnly(); });
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const btn = $('fullscreenBtn'); if(btn) btn.addEventListener('click', enterDigitalOnly);
+      const overlay = $('digitalOnly'); if(overlay) overlay.addEventListener('click', exitDigitalOnly);
+      document.querySelectorAll('.mode-option').forEach(item => item.addEventListener('click', ()=> selectMode(item.dataset.value)));
+    });
 
-    timer = setInterval(() => {
+    async function resume(){ running=true; await requestWakeLock(); clearInterval(timer); timer=setInterval(tick,60000); $('status').textContent='🟢 SINAV BAŞLADI'; }
 
-        if(!running) return;
+    function pauseClock(){ running=false; clearInterval(timer); releaseWakeLock(); $('status').textContent='🟡 DURAKLATILDI'; save(); }
 
-        minute++;
+    function resetClock(){ pauseClock(); hour=10; minute=15; updateDisplay(); localStorage.removeItem('examClockV2'); $('status').textContent='Hazır'; $('finish').style.display='none'; }
 
-        if(minute >= 60){
-            minute = 0;
-            hour++;
-        }
+    function finishExam(){ pauseClock(); $('finish').style.display='flex'; if(navigator.vibrate) navigator.vibrate([400,200,400]); }
 
-        update();
+    $('mode').addEventListener('change', ()=>{ applyTheme(); updateProgress(); save(); });
+    $('startBtn').addEventListener('click', startClock);
+    $('pauseBtn').addEventListener('click', pauseClock);
+    $('resetBtn').addEventListener('click', resetClock);
 
-    }, 60000);
+    async function registerServiceWorker(){
+      if('serviceWorker' in navigator){
+        try{ await navigator.serviceWorker.register('./sw.js'); }
+        catch(e){ console.warn('SW registration failed', e); }
+      }
+    }
 
-    update();
-}
-
-/* STOP */
-function stop(){
-    running = false;
-    clearInterval(timer);
-    timer = null;
-
-    document.getElementById("status").textContent = "🟡 Duraklatıldı";
-}
-
-/* RESET */
-function reset(){
-    clearInterval(timer);
-    timer = null;
-
-    hour = 0;
-    minute = 0;
-    running = false;
-
-    document.getElementById("progress").style.width = "0%";
-    document.getElementById("progressText").textContent = "0%";
-
-    document.getElementById("status").textContent = "Hazır";
-}
-
-document.getElementById("startBtn").addEventListener("click", start);
-document.getElementById("stopBtn").addEventListener("click", stop);
-document.getElementById("resetBtn").addEventListener("click", reset);
-
-</script>
-
+    applyTheme(); load();
+    registerServiceWorker();
+  </script>
 </body>
 </html>
