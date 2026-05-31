@@ -99,6 +99,15 @@
     #finish h1{font-size:4rem;color:var(--accent-tyt);margin-bottom:8px}
 
     @media (max-width:900px){.container{grid-template-columns:1fr;}.right{order:2}.left{order:1}}
+    /* Confirmation modal styles */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;z-index:3000}
+    .modal{width:min(520px,92vw);background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));border-radius:14px;padding:20px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 30px 80px rgba(0,0,0,0.6);color:var(--muted)}
+    .modal h4{margin:0 0 8px;color:#e6eef8;font-weight:800}
+    .modal p{margin:0 0 16px;color:var(--muted)}
+    .modal .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+    .modal .btn{border-radius:10px;padding:10px 14px}
+    .modal .btn.confirm{background:linear-gradient(180deg,#60a5fa,#3b82f6);color:#fff}
+    .modal .btn.cancel{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
   </style>
 </head>
 <body class="tyt">
@@ -175,6 +184,9 @@
   <div id="finish">
     <h1>SINAV BİTTİ</h1>
     <p style="color:#cbd5e1">Süre tamamlandı.</p>
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:center">
+      <button id="finishClose" class="btn reset">Kapat</button>
+    </div>
   </div>
 
   <!-- Digital-only fullscreen overlay -->
@@ -183,9 +195,23 @@
     <div id="bigMode" style="color:var(--muted);margin-top:10px;font-weight:700">TYT MODU</div>
   </div>
 
+  <!-- Confirmation modal -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <h4>Mod Değişikliği</h4>
+      <p id="confirmMessage">Sınav devam ediyor. Mod değiştirilsin ve sayaç durdurulsun mu?</p>
+      <div class="modal-actions">
+        <button id="confirmCancel" class="btn cancel">Vazgeç</button>
+        <button id="confirmOk" class="btn confirm">Onayla</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let timer=null,wakeLock=null;
     let hour=10,minute=15,running=false;
+    let hasStarted=false; // whether clock was started at least once
+    let prevMode = 'TYT';
     const $ = id => document.getElementById(id);
 
     function applyTheme(){
@@ -262,8 +288,12 @@
 
     async function startClock(){
       if(!running){
-        hour = parseInt($('hour').value) || 10;
-        minute = parseInt($('minute').value) || 15;
+        // only initialise time from inputs the very first time user starts
+        if(!hasStarted){
+          hour = parseInt($('hour').value) || 10;
+          minute = parseInt($('minute').value) || 15;
+          hasStarted = true;
+        }
       }
       running = true;
       applyTheme();
@@ -299,17 +329,74 @@
       const btn = $('fullscreenBtn'); if(btn) btn.addEventListener('click', enterDigitalOnly);
       const overlay = $('digitalOnly'); if(overlay) overlay.addEventListener('click', exitDigitalOnly);
       document.querySelectorAll('.mode-option').forEach(item => item.addEventListener('click', ()=> selectMode(item.dataset.value)));
+      const finishClose = $('finishClose'); if(finishClose) finishClose.addEventListener('click', ()=>{
+        $('finish').style.display = 'none';
+        // ensure timer paused and state reset to ready
+        pauseClock();
+        hasStarted = false;
+        $('status').textContent = 'Hazır';
+        if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+      });
     });
 
     async function resume(){ running=true; await requestWakeLock(); clearInterval(timer); timer=setInterval(tick,60000); $('status').textContent='🟢 SINAV BAŞLADI'; }
 
     function pauseClock(){ running=false; clearInterval(timer); releaseWakeLock(); $('status').textContent='🟡 DURAKLATILDI'; save(); }
 
-    function resetClock(){ pauseClock(); hour=10; minute=15; updateDisplay(); localStorage.removeItem('examClockV2'); $('status').textContent='Hazır'; $('finish').style.display='none'; }
+    function resetClock(){ pauseClock(); hour=10; minute=15; hasStarted=false; updateDisplay(); localStorage.removeItem('examClockV2'); $('status').textContent='Hazır'; $('finish').style.display='none'; }
 
     function finishExam(){ pauseClock(); $('finish').style.display='flex'; if(navigator.vibrate) navigator.vibrate([400,200,400]); }
 
-    $('mode').addEventListener('change', ()=>{ applyTheme(); updateProgress(); save(); });
+    function showConfirmModal(message){
+      return new Promise(resolve => {
+        const backdrop = $('confirmModal');
+        const ok = $('confirmOk');
+        const cancel = $('confirmCancel');
+        const msg = $('confirmMessage');
+        msg.textContent = message;
+        backdrop.style.display = 'flex';
+        backdrop.setAttribute('aria-hidden','false');
+        // focus management
+        ok.focus();
+
+        function cleanup(result){
+          backdrop.style.display = 'none';
+          backdrop.setAttribute('aria-hidden','true');
+          ok.removeEventListener('click', onOk);
+          cancel.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKey);
+          resolve(result);
+        }
+
+        function onOk(){ cleanup(true); }
+        function onCancel(){ cleanup(false); }
+        function onKey(e){ if(e.key === 'Escape') cleanup(false); }
+
+        ok.addEventListener('click', onOk);
+        cancel.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKey);
+      });
+    }
+
+    async function handleModeChange(){
+      const select = $('mode');
+      const newMode = select.value;
+      if(newMode === prevMode) return;
+      if(running){
+        const proceed = await showConfirmModal('Sınav devam ediyor. Mod değiştirilsin ve sayaç durdurulsun mu?');
+        if(!proceed){
+          // revert selection
+          select.value = prevMode;
+          syncModeLabel();
+          return;
+        }
+        // user confirmed: pause the running exam
+        pauseClock();
+      }
+      prevMode = newMode;
+      applyTheme(); updateProgress(); save();
+    }
+    $('mode').addEventListener('change', handleModeChange);
     $('startBtn').addEventListener('click', startClock);
     $('pauseBtn').addEventListener('click', pauseClock);
     $('resetBtn').addEventListener('click', resetClock);
@@ -322,6 +409,7 @@
     }
 
     applyTheme(); load();
+    prevMode = $('mode').value;
     registerServiceWorker();
   </script>
 </body>
